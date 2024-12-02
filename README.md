@@ -23,11 +23,12 @@ El proyecto incluye herramientas para construir, reducir y evaluar programas fun
 ## :gear: Requisitos del Sistema ##
 1. Mozart Programming Interface (MPI) o su extensión para Visual Studio Code.
 2. Un entorno compatible con la ejecución de proyectos en Mozart Oz.
+
 Nota:
 Para ejecutar proyectos en Mozart Oz desde Visual Studio Code:
-1. Asegúrate de que la extensión de Mozart esté instalada.
-2. Abre el archivo principal main.oz.
-3. Usa el comando Ctrl + . seguido de Ctrl + B para ejecutar el programa.
+  1. Asegúrate de que la extensión de Mozart esté instalada.
+  2. Abre el archivo principal main.oz.
+  3. Usa el comando Ctrl + . seguido de Ctrl + B para ejecutar el programa.
 
 
 ## :rocket: Instalación ##
