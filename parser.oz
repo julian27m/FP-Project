@@ -1,6 +1,7 @@
 functor
 import 
     System(showInfo:Show)
+    Graph(buildGraph:BuildGraph)
 
 export 
     Parse
@@ -10,6 +11,10 @@ define
     Saludo = "The Parser module is working correctly."
 
     fun {Parse ProgramaTexto}
-        "GrafoSimulado(Parser)"
+ 
+        Lineas = {String.tokens ProgramaTexto '\n'}
+        Grafo = {BuildGraph Lineas}
+    in
+        Grafo
     end
 end
