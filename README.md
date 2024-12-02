@@ -40,8 +40,22 @@ Sigue estos pasos para configurar y ejecutar el proyecto en tu máquina local:
 3. Navega al directorio del proyecto:
    ```cd FP-Project```
 5. Asegúrate de que Mozart MPI o la extensión en Visual Studio Code está correctamente instalada.
-6. Abre el archivo main.oz en tu editor.
-7. Ejecuta el proyecto siguiendo las instrucciones mencionadas en la sección de Requisitos del Sistema.
+6. Abre una terminal.
+7. Compila todos los archivos del proyecto con los siguientes comandos:
+   
+    -  ```ozc -c Util.oz```
+  
+    - ```ozc -c Graph.oz```
+  
+    - ```ozc -c Parser.oz```
+  
+    - ```ozc -c Reducer.oz```
+  
+    - ```ozc -c Main.oz```
+      
+8. Ejecuta el proyecto con el siguiente comando:
+  
+    - ```ozengine Main.ozf```
 
 ## :file_folder: Estructura del Proyecto ## 
 
