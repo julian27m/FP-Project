@@ -4,49 +4,28 @@ import
 
 export 
     BuildGraph
-    NodoConstante
-    NodoVariable
-    NodoAplicacion
     Saludo
 
 define
     Saludo = "The Graph module is working correctly."
 
-    % Definición de estructuras de nodos
-    fun {NodoConstante N}
-        constant(num:N)
-    end
+    % Construcción del grafo (simple confirmación)
+    fun {BuildGraph ParsedData}
+        local Name Variables Operation Parameters in
+            % Extraer datos de la tupla recibida
+            Name = ParsedData.name
+            Variables = ParsedData.variables
+            Operation = ParsedData.operation
+            Parameters = ParsedData.parameters
 
-    fun {NodoVariable V}
-        variable(var:V)
-    end
+            % Confirmar recepción
+            {Show "Graph Received:"}
+            {Show "Name:"#Name}
+            {Show "Variables:"#Variables}
+            {Show "Operation:"#Operation}
+            {Show "Parameters:"#Parameters}
 
-    fun {NodoAplicacion F A}
-        application(func:F arg:A)
-    end
-
-    % Construcción del grafo a partir de líneas del programa
-    fun {BuildGraph Lineas}
-        Grafo = []
-    in
-        for Linea in Lineas do
-            NuevoNodo = {ProcesarLinea Linea}
-            Grafo = NuevoNodo | Grafo
-        end
-        Grafo
-    end
-
-    % Procesa una línea de código y crea nodos
-    fun {ProcesarLinea Linea}
-        Tokens = {String.tokens Linea ' '}
-    in
-        case Tokens of
-            ['fun' Name Param '=' Exp] then
-                {NodoAplicacion Name {NodoVariable Param}}
-            [Name Arg] then
-                {NodoAplicacion Name {NodoConstante {String.toInt Arg}}}
-            else
-                fail
+            "Graph Construction Complete"
         end
     end
 end

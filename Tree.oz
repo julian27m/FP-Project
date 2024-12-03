@@ -36,17 +36,21 @@ define
     end
 
     proc {Test}
-        local RootNode LeftNode RightNode LeftSubRightNode RightSubLeftNode in
+        local RootNode LeftNode RightNode LeftSubRightNode RightSubLeftNode SubRightSubLeftNode SubRightSubRightNode LeftSubLeftNode in
             RootNode = {New Node init("@")}
-            LeftNode = {New Node init("*")}
-            RightNode = {New Node init("@")}
-            LeftSubRightNode = {New Node init("2")}
-            RightSubLeftNode = {New Node init("3")}
+            LeftNode = {New Node init("@")}
+            RightNode = {New Node init("5")}
+            RightSubLeftNode = {New Node init("@")}
+            LeftSubLeftNode = {New Node init("*")}
+            SubRightSubLeftNode = {New Node init("X")}
+            SubRightSubRightNode = {New Node init("X")}
 
             {RootNode setLeft(LeftNode)}
             {RootNode setRight(RightNode)}
-            {RightNode setLeft(LeftSubRightNode)}
-            {RightNode setRight(RightSubLeftNode)}
+            {LeftNode setLeft(LeftSubLeftNode)}
+            {LeftNode setRight(RightSubLeftNode)}
+            {RightSubLeftNode setLeft(SubRightSubLeftNode)}
+            {RightSubLeftNode setRight(SubRightSubRightNode)}
             {PrintTree RootNode 0 ""}
         end
     end
