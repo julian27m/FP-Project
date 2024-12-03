@@ -1,11 +1,16 @@
 functor
+
+import 
+    System(showInfo:Show)
+
 export 
+    
     Str2Lst
     Infix2Prefix
 define
     %% Split a string by spaces
     fun {Str2Lst Data}
-        {String.tokens Data ' '}
+        {String.tokens Data & }
     end
 
     %% Data is a list of the form ["(", "X", "+", "Y", ")"] and returns it in prefix form ["+" "X" "Y"]
@@ -77,4 +82,18 @@ define
             {Infix2Postfix "("|{Reverse "("|Data nil} nil nil}
         end
     end
+    %{Show {Infix2Prefix {Str2Lst "fun hola X Y Z = var A = X * Y var B = A + 2 in A * B + Z"}}}
+        for Value in  {Infix2Prefix {Str2Lst "fun hola X Y Z = var A = X * Y var B = A + 2 in A * B + Z"}} do
+            {Show Value}
+        end
+
+        {Show "\n\n\n"}
+    for Value2 in {Infix2Prefix {Str2Lst "( x * x + x )"}} do
+        {Show Value2}
+    end
 end
+
+% x + x * 3 * 4
+% 2 + 2 * 3 * 4
+
+
