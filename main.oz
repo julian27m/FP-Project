@@ -15,7 +15,7 @@ define
 
     % Simulación básica de una operación funcional
     {Show "Introduce a function:"}
-    Programa = "fun square(X) = X * X"
+    Programa = "fun square(X) = X * X square(5)"
     Grafo = {Parse Programa}
     {Show "Parsed input:"}
     {Show Grafo}
