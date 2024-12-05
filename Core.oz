@@ -32,8 +32,7 @@ define
             {Tree getValue(Value)}
             {Tree getLeft(Left)}
             {Tree getRight(Right)}
-            % Just display the value directly
-            {PrintIndentedNode Value Level}
+            {PrintIndentedNode {VirtualString.toString Value} Level}
             if Left \= nil then
                {DisplayTree Left Level+1}
             end
@@ -45,7 +44,11 @@ define
    end
 
    fun {ListToString List}
-   {List.map List fun {$ C} [C] end}
+      if {IsVirtualString List} then
+         {VirtualString.toString List}
+      else
+         {VirtualString.toString {List.map List fun {$ C} [C] end}}
+      end
    end
 
    fun {GetTreeValue Tree}
@@ -123,18 +126,22 @@ define
 
       meth parseProgram(Program)
          for Line in Program do
-            local LineType in
-               {self getLineType(Line LineType)}
-               case LineType
-               of func then
-                  {Show "Parsing function: "#{ListToString Line}}
-                  {self parseFunction(Line)}
-               [] app then
-                  {Show "Parsing application: "#{ListToString Line}}
-                  local NewTree in
-                     {self parseApplication(Line NewTree)}
-                     currentTree := NewTree
-                     {self evaluate}
+            local CleanLine in
+               CleanLine = {VirtualString.toString {Strip Line " "}}
+               if {Length CleanLine} > 0 then
+                  local LineType in
+                     {self getLineType(CleanLine LineType)}
+                     {Show "Processing line: "#{VirtualString.toString CleanLine}#" as "#{VirtualString.toString LineType}}
+                     case LineType
+                     of func then
+                        {self parseFunction(CleanLine)}
+                     [] app then
+                        local NewTree in
+                           {self parseApplication(CleanLine NewTree)}
+                           currentTree := NewTree
+                           {self evaluate}
+                        end
+                     end
                   end
                end
             end
@@ -142,7 +149,7 @@ define
       end
 
       meth getLineType(Line ?Type)
-         if {Contains {ListToString Line} "fun"} then 
+         if {Contains {VirtualString.toString Line} "fun "} then 
             Type = func
          else 
             Type = app 
@@ -152,35 +159,73 @@ define
       meth parseFunction(Line)
          local Name Args Body in
             {self extractFunction(Line Name Args Body)}
-            {Show {VirtualString.toString "Parsed function - Name: "#{Value.toVirtualString Name 100 100}}}
-            {Dictionary.put @functions Name 
-               o(args:Args
-                 body:Body)}
-         end
-      end
-
-      meth extractFunction(Line ?Name ?Args ?Body)
-         local Parts in
-            Parts = {Split {Strip {Replace {ListToString Line} "fun " ""} " "} "="}
-            local DefPart BodyPart in
-               DefPart = {Strip {Nth Parts 1} " "}
-               BodyPart = {Strip {Nth Parts 2} " "}
-               local DefParts in
-                  DefParts = {Split DefPart " "}
-                  Name = {Nth DefParts 1} 
-                  Args = {List.drop DefParts 1}
-                  Body = BodyPart
-               end
+            % Convert the name to an atom before using as dictionary key
+            local FuncName in
+               FuncName = {VirtualString.toAtom Name}
+               {Dictionary.put @functions FuncName 
+                  o(args:Args
+                    body:Body)}
+               {Show "Added function: "#{VirtualString.toString Name}#" to dictionary"}
             end
          end
       end
 
+      meth extractFunction(Line ?Name ?Args ?Body)
+         local Parts RawDefPart in
+            % Split into definition and body parts around '='
+            Parts = {Split Line "="}
+            RawDefPart = {Nth Parts 1}
+            
+            % Process definition part (remove 'fun' and split into name/args)
+            local DefStr DefParts in
+               DefStr = {Strip {Replace RawDefPart "fun" ""} " "}
+               DefParts = {Split DefStr " "}
+               Name = {VirtualString.toString {Nth DefParts 1}}
+               Args = {Map {List.drop DefParts 1} VirtualString.toString}
+               Body = {Strip {Nth Parts 2} " "}
+               
+               % Debug output with proper string conversion
+               {Show "Function Definition:"}
+               {Show "  Name: "#{VirtualString.toString Name}}
+               {Show "  Args: "#{VirtualString.toString {Join Args " "}}}
+               {Show "  Body: "#{VirtualString.toString Body}}
+            end
+         end
+      end
+      
       meth parseApplication(Line ?Root)
          Root = {New Node init("@")}
          local Parts in
-            Parts = {Filter {Split Line " "} fun {$ P} P \= "" end}
-            {Show "Parsing application parts: "#{ListToString Parts}}
-            {self buildApplicationTree(Root Parts)}
+            Parts = {Filter {Split Line " "} fun {$ P} {Length P} > 0 end}
+            if {Length Parts} == 2 then  % Simple function application
+               local Name Arg in
+                  Name = {Nth Parts 1}
+                  Arg = {Nth Parts 2}
+                  {Root setLeft({New Node init(Name)})}
+                  {Root setRight({New Node init(Arg)})}
+               end
+            else
+               {self buildApplicationTree(Root Parts)}
+            end
+         end
+      end
+
+      meth parseFunctionBody(Parts Root)
+         % Parse function body into appropriate tree structure
+         case Parts
+         of ["fun" Name Arg "=" Op Arg1 Arg2] then
+            local OpNode in
+               OpNode = {New Node init("@")}
+               {OpNode setLeft({New Node init(Op)})}
+               local ArgsNode in
+                  ArgsNode = {New Node init("@")}
+                  {ArgsNode setLeft({New Node init(Arg1)})}
+                  {ArgsNode setRight({New Node init(Arg2)})}
+                  {OpNode setRight(ArgsNode)}
+               end
+               {Root setLeft({New Node init(Name)})}
+               {Root setRight(OpNode)}
+            end
          end
       end
       
@@ -193,13 +238,11 @@ define
                if IsNum then
                   {Root setRight({New Node init(Value)})}
                else
-                  {Root setLeft({New Node init(Value)})}
+                  {Root setLeft({New Node init({VirtualString.toString Value})})}
                end
-               {Show "Single value: "#{ListToString Value}}
             end
          [] Name|Args then
-            {Show "Function: "#{ListToString Name}#" with args: "#{ListToString Args}}
-            {Root setLeft({New Node init(Name)})}
+            {Root setLeft({New Node init({VirtualString.toString Name})})}
             if Args \= nil then
                local RightNode in
                   RightNode = {New Node init("@")}
@@ -210,9 +253,13 @@ define
          end
       end
 
+      meth debug(Msg)
+         {Show Msg}
+      end
+
       meth isNumeric(Str ?Result)
          try
-            _ = {String.toInt Str}
+            _ = {String.toInt {VirtualString.toString Str}}
             Result = true
          catch _ then
             Result = false
@@ -253,6 +300,8 @@ define
                   Result = nil
                else
                   {Left getValue(Value)}
+                  % Convert value to atom for dictionary lookup
+                  Value = {VirtualString.toAtom {VirtualString.toString Value}}
                   {self isBuiltinOperation(Value IsBuiltin)}
                   if IsBuiltin orelse {Dictionary.member @functions Value} then
                      Result = Tree
@@ -266,9 +315,11 @@ define
             end
          end
       end
+      
+      
 
       meth isBuiltinOperation(Op ?Result)
-         Result = {Member {ListToString Op} ["+" "-" "*" "/"]}
+         Result = {Member Op ['+' '-' '*' '/']}
       end
 
       meth reduceExpression(Tree)
