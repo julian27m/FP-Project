@@ -158,37 +158,57 @@ define
 
       meth parseFunction(Line)
          local Name Args Body in
-            {self extractFunction(Line Name Args Body)}
-            % Convert the name to an atom before using as dictionary key
-            local FuncName in
-               FuncName = {VirtualString.toAtom Name}
-               {Dictionary.put @functions FuncName 
-                  o(args:Args
-                    body:Body)}
-               {Show "Added function: "#{VirtualString.toString Name}#" to dictionary"}
+            local Parts RawDefPart in
+               % Split into definition and body parts around '='
+               Parts = {Split Line "="}
+               RawDefPart = {Nth Parts 1}
+               
+               % Process definition part (remove 'fun' and split into name/args)
+               local DefStr DefParts in
+                  DefStr = {Strip {Replace RawDefPart "fun" ""} " "}
+                  DefParts = {Split DefStr " "}
+                  Name = {VirtualString.toString {Nth DefParts 1}}
+                  Args = {Map {List.drop DefParts 1} VirtualString.toString}
+                  Body = {Strip {Nth Parts 2} " "}
+                  
+                  % Convert the body string into a tree structure
+                  local BodyTree in
+                     {self parseFunctionBody(Body BodyTree)}
+                     % Convert the name to an atom before using as dictionary key
+                     local FuncName in
+                        FuncName = {VirtualString.toAtom Name}
+                        {Dictionary.put @functions FuncName 
+                           o(args:Args
+                             body:BodyTree)}
+                        {Show "Function Definition:"}
+                        {Show "  Name: "#{VirtualString.toString Name}}
+                        {Show "  Args: "#{VirtualString.toString {Join Args " "}}}
+                        {Show "  Body: "#{VirtualString.toString Body}}
+                        {Show "Added function: "#{VirtualString.toString Name}#" to dictionary"}
+                     end
+                  end
+               end
             end
          end
       end
 
-      meth extractFunction(Line ?Name ?Args ?Body)
-         local Parts RawDefPart in
-            % Split into definition and body parts around '='
-            Parts = {Split Line "="}
-            RawDefPart = {Nth Parts 1}
-            
-            % Process definition part (remove 'fun' and split into name/args)
-            local DefStr DefParts in
-               DefStr = {Strip {Replace RawDefPart "fun" ""} " "}
-               DefParts = {Split DefStr " "}
-               Name = {VirtualString.toString {Nth DefParts 1}}
-               Args = {Map {List.drop DefParts 1} VirtualString.toString}
-               Body = {Strip {Nth Parts 2} " "}
-               
-               % Debug output with proper string conversion
-               {Show "Function Definition:"}
-               {Show "  Name: "#{VirtualString.toString Name}}
-               {Show "  Args: "#{VirtualString.toString {Join Args " "}}}
-               {Show "  Body: "#{VirtualString.toString Body}}
+      meth parseFunctionBody(Body ?Root)
+         local Parts in
+            Parts = {Filter {Split Body " "} fun {$ P} {Length P} > 0 end}
+            Root = {New Node init("@")}
+            case Parts
+            of [Single] then
+               {Root setValue(Single)}
+            [] [Left Op Right] then % Binary operation like "x * x"
+               {Root setLeft({New Node init(Op)})}    % Set operator as left child
+               local ArgsNode in
+                  ArgsNode = {New Node init("@")}     % Create node for arguments
+                  {ArgsNode setLeft({New Node init(Left)})}   % Left operand
+                  {ArgsNode setRight({New Node init(Right)})} % Right operand
+                  {Root setRight(ArgsNode)}           % Set arguments as right child
+               end
+            else
+               {Root setValue("@")}                   % Default case
             end
          end
       end
@@ -210,38 +230,44 @@ define
          end
       end
 
-      meth parseFunctionBody(Parts Root)
-         % Parse function body into appropriate tree structure
-         case Parts
-         of ["fun" Name Arg "=" Op Arg1 Arg2] then
-            local OpNode in
-               OpNode = {New Node init("@")}
-               {OpNode setLeft({New Node init(Op)})}
+      
+      
+      meth parseBodyExpression(Body ?Root)
+         local Parts in
+            Parts = {Filter {Split Body " "} fun {$ P} {Length P} > 0 end}
+            Root = {New Node init("@")}
+            case Parts
+            of [Single] then  % Single value/variable
+               {Root setValue(Single)}
+            [] [Left Op Right] then  % Binary operation
+               {Root setLeft({New Node init(Op)})}
                local ArgsNode in
                   ArgsNode = {New Node init("@")}
-                  {ArgsNode setLeft({New Node init(Arg1)})}
-                  {ArgsNode setRight({New Node init(Arg2)})}
-                  {OpNode setRight(ArgsNode)}
+                  {ArgsNode setLeft({New Node init(Left)})}
+                  {ArgsNode setRight({New Node init(Right)})}
+                  {Root setRight(ArgsNode)}
                end
-               {Root setLeft({New Node init(Name)})}
-               {Root setRight(OpNode)}
+            else  % More complex expressions
+               {self buildBodyTree(Parts Root)}
             end
          end
       end
-      
+
       meth buildApplicationTree(Root Parts)
          case Parts
          of nil then skip
          [] [Value] then
-            local IsNum in
-               {self isNumeric(Value IsNum)}
+            local IsNum VSValue in
+               VSValue = {VirtualString.toString Value}
+               {self isNumeric(VSValue IsNum)}
                if IsNum then
-                  {Root setRight({New Node init(Value)})}
+                  {Root setRight({New Node init(VSValue)})}
                else
-                  {Root setLeft({New Node init({VirtualString.toString Value})})}
+                  {Root setLeft({New Node init(VSValue)})}
                end
             end
          [] Name|Args then
+            % Convert name to string properly
             {Root setLeft({New Node init({VirtualString.toString Name})})}
             if Args \= nil then
                local RightNode in
@@ -265,9 +291,6 @@ define
             Result = false
          end
       end
-      
-      
-
 
       meth evaluate()
          local Redex in
@@ -300,15 +323,18 @@ define
                   Result = nil
                else
                   {Left getValue(Value)}
-                  % Convert value to atom for dictionary lookup
-                  Value = {VirtualString.toAtom {VirtualString.toString Value}}
-                  {self isBuiltinOperation(Value IsBuiltin)}
-                  if IsBuiltin orelse {Dictionary.member @functions Value} then
-                     Result = Tree
-                  else
-                     local Right in
-                        {Tree getRight(Right)}
-                        {self findOutermostRedex(Right Result)}
+                  % First convert to string then to atom safely
+                  local ValueStr ValueAtom in
+                     ValueStr = {VirtualString.toString Value}
+                     ValueAtom = {String.toAtom ValueStr}
+                     {self isBuiltinOperation(ValueAtom IsBuiltin)}
+                     if IsBuiltin orelse {Dictionary.member @functions ValueAtom} then
+                        Result = Tree
+                     else
+                        local Right in
+                           {Tree getRight(Right)}
+                           {self findOutermostRedex(Right Result)}
+                        end
                      end
                   end
                end
@@ -316,10 +342,9 @@ define
          end
       end
       
-      
 
       meth isBuiltinOperation(Op ?Result)
-         Result = {Member Op ['+' '-' '*' '/']}
+         Result = {Member Op ['+'#'-'#'*'#'/']} % Using atoms for comparison
       end
 
       meth reduceExpression(Tree)
@@ -337,8 +362,9 @@ define
       end
 
       meth instantiateTemplate(Tree FuncName)
-         local Func Right Args in
-            Func = {Dictionary.condGet @functions FuncName nil}
+         local Func Right Args FuncNameAtom in
+            FuncNameAtom = {VirtualString.toAtom FuncName}
+            Func = {Dictionary.condGet @functions FuncNameAtom nil}
             {Tree getRight(Right)}
             case Func
             of nil then skip
@@ -369,25 +395,42 @@ define
          end
       end
       
-      meth instantiateBody(BodyTree Args FormalArgs ?Result)
-         if BodyTree == nil then 
+      meth instantiateBody(Body Args FormalArgs ?Result)
+         if Body == nil then 
             Result = nil
          else
             local NewNode Value Left Right in
-               {BodyTree getValue(Value)}
+               {Body getValue(Value)}
                NewNode = {New Node init(Value)}
                
-               % Substitute arguments
+               % Substitute arguments if this is a variable
                if {Member Value FormalArgs} then
-                  local Index in
-                     Index = {List.position FormalArgs Value}
-                     {NewNode setValue({Nth Args Index})}
+                  local
+                     fun {FindPosition Value Args}
+                        fun {FindPosHelper Value Args Pos}
+                           case Args
+                           of nil then 0
+                           [] H|T then
+                              if H == Value then Pos
+                              else {FindPosHelper Value T Pos+1}
+                              end
+                           end
+                        end
+                     in
+                        {FindPosHelper Value Args 1}
+                     end
+                     ArgPos
+                  in
+                     ArgPos = {FindPosition Value FormalArgs}
+                     if ArgPos > 0 then
+                        {NewNode setValue({Nth Args ArgPos})}
+                     end
                   end
                end
                
                % Recursively instantiate children
-               {BodyTree getLeft(Left)}
-               {BodyTree getRight(Right)}
+               {Body getLeft(Left)}
+               {Body getRight(Right)}
                local LeftResult RightResult in
                   {self instantiateBody(Left Args FormalArgs LeftResult)}
                   {self instantiateBody(Right Args FormalArgs RightResult)}
@@ -396,6 +439,22 @@ define
                end
                Result = NewNode
             end
+         end
+      end
+
+      meth findArgPosition(Value Args)
+         local
+            fun {FindPosHelper Value Args Pos}
+               case Args
+               of nil then 0
+               [] H|T then
+                  if H == Value then Pos
+                  else {FindPosHelper Value T Pos+1}
+                  end
+               end
+            end
+         in
+            {FindPosHelper Value Args 1 nil}
          end
       end
 
