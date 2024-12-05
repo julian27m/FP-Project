@@ -1,75 +1,35 @@
-functor
+functor 
 import 
-    System(showInfo:Show print:Print)
-    Parser(parse:Parse)
-    Reducer(reduce:Reduce)
-    Graph(buildGraph:BuildGraph)
-    Util(getSaludo:GetSaludo)
-    Open
-    StringJ(split:Split strip:Strip)
-    Tree(node:Node printTree:PrintTree fullFillFromCallBack:FullFillFromCallBack)
+   System(showInfo:Show)
+   Open
+   StringTools(split:Split join:Join strip:Strip replace:Replace contains:Contains)
+   Core(evaluator:Evaluator)
+   
+define 
+   fun {ReadProgram Path}
+      {Show "\nReading program from: "#Path}
+      local File Program in
+         File = {New Open.file init(name:Path flags:[read])}
+         {File read(list:Program)}
+         {Filter {Split Program "\n"} 
+          fun {$ Line} 
+             {Length Line} > 0 andthen 
+             {Nth Line 1} \= '#'
+          end}
+      end
+   end
 
-define
+   proc {RunProgram Path}
+      local Program Eval in
+         Program = {ReadProgram Path}
+         {Show "\nProgram contents:"}
+         for Line in Program do
+            {Show "  "#Line}
+         end
+         {Show "\n=== Beginning Evaluation ===\n"}
+         Eval = {New Core.evaluator init(Program)}
+      end
+   end
 
-    class Program
-        attr functions callbacks
-
-        meth init()
-            functions := nil
-            callbacks := nil
-        end
-
-        meth addFunction(Line)
-            if (@functions == nil) then
-                functions := [{Strip Line " "}]
-            else
-                functions := {Append @functions [{Strip Line " "}]}
-            end
-        end
-
-        meth getFunctions(Return)
-            Return = @functions
-        end
-
-        meth addCallBack(Line)
-            if (@callbacks == nil) then
-                callbacks := [{Strip Line " "}]
-            else
-                callbacks := {Append @callbacks [{Strip Line " "}]}
-            end
-        end
-
-        meth getCallBacks(Return)
-            Return = @callbacks
-        end
-
-        meth execute()
-            {Show "Starting execution"}
-            local CallBackList in
-                {self getCallBacks(CallBackList)}
-                for CallBack in CallBackList do
-                    {Show "This is a call back <" # CallBack # ">"}
-                    {FullFillFromCallBack CallBack}
-                end
-            end
-        end
-    end   
-    
-
-    local Lines MyProgram in
-        File = {New Open.file init(name:'input.txt' flags:[read])}
-        {File read(list:Lines)}
-
-        MyProgram = {New Program init()}
-        for Line in {Split Lines "\n"} do
-            if {Nth {Split Line " "} 1} == "fun" then
-                {MyProgram addFunction(Line)}
-            else
-                {MyProgram addCallBack(Line)}
-            end
-        end
-
-        {MyProgram execute()}
-
-    end
+   {RunProgram "test.hb"}
 end

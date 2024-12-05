@@ -1,3 +1,9 @@
 @echo off
-del *.ozf
-echo Archivos .ozf eliminados correctamente.
+echo Cleaning up Hummingbird build files...
+if exist *.ozf (
+    del *.ozf
+    echo Successfully deleted .ozf files.
+) else (
+    echo No .ozf files found.
+)
+pause
