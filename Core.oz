@@ -355,17 +355,21 @@ define
       
 
       meth isBuiltinOperation(Op ?Result)
-         Result = {Member Op ['+'#'-'#'*'#'/']} % Using atoms for comparison
+         local OpStr in  % Add local declaration
+            OpStr = {VirtualString.toString Op}
+            Result = {Member OpStr ["+" "-" "*" "/"]} 
+         end
       end
 
       meth reduceExpression(Tree)
-         local Left Right Value IsBuiltin in
+         local Left Right Value IsBuiltin ValueStr in  % Add ValueStr to local declaration
             {Tree getLeft(Left)}
             {Tree getRight(Right)}
             {Left getValue(Value)}
-            {self isBuiltinOperation(Value IsBuiltin)}
+            ValueStr = {VirtualString.toString Value}
+            {self isBuiltinOperation(ValueStr IsBuiltin)}
             if IsBuiltin then
-               {self evaluateBuiltin(Tree Value)}
+               {self evaluateBuiltin(Tree ValueStr)}
             else
                {self instantiateTemplate(Tree Value)}
             end
@@ -424,9 +428,9 @@ define
                HasLeft = if Left == nil then "no" else "yes" end
                HasRight = if Right == nil then "no" else "yes" end
                
-               {Show "Processing node: "#Value}
-               {Show "  Has left child: "#HasLeft}
-               {Show "  Has right child: "#HasRight}
+               %{Show "Processing node: "#Value}
+               %{Show "  Has left child: "#HasLeft}
+               %{Show "  Has right child: "#HasRight}
                
                % First determine if this is a parameter or special node
                case Value
@@ -458,9 +462,9 @@ define
                   end
                else
                   % Debug info with simpler approach
-                  {Show "=== Parameter Check Debug ==="}
-                  {Show "FormalArgs: " # {VirtualString.toString {Join FormalArgs ""}}}
-                  {Show "Value: " # {VirtualString.toString Value}}
+                  %{Show "=== Parameter Check Debug ==="}
+                  %{Show "FormalArgs: " # {VirtualString.toString {Join FormalArgs ""}}}
+                  %{Show "Value: " # {VirtualString.toString Value}}
                   
                   local NormalizedValue NormalizedParam TestResult in
                      % Convert both to strings
@@ -469,29 +473,29 @@ define
                      
                      % Test equality separately
                      TestResult = NormalizedValue == NormalizedParam
-                     {Show "Equality test result: "#if TestResult then "equal" else "not equal" end}
+                     %{Show "Equality test result: "#if TestResult then "equal" else "not equal" end}
                      
                      % Show string lengths
-                     {Show "Value length: "#{Int.toString {Length NormalizedValue}}}
-                     {Show "Param length: "#{Int.toString {Length NormalizedParam}}}
+                     %{Show "Value length: "#{Int.toString {Length NormalizedValue}}}
+                     %{Show "Param length: "#{Int.toString {Length NormalizedParam}}}
                      
                      % Always substitute when it's a parameter
                      if TestResult then
-                        {Show "  Substituting parameter "#Value#" with "#({Nth Args 1})}
+                        %{Show "  Substituting parameter "#Value#" with "#({Nth Args 1})}
                         Result = {New Node init({Nth Args 1})}
                      else
                         if NormalizedValue == NormalizedParam then
-                           {Show "  Substituting parameter "#Value#" with "#({Nth Args 1})}
+                           %{Show "  Substituting parameter "#Value#" with "#({Nth Args 1})}
                            Result = {New Node init({Nth Args 1})}
                         else
-                           {Show "  Using literal value: "#Value}
+                           %{Show "  Using literal value: "#Value}
                            Result = {New Node init(Value)}
                         end
                      end
                   end
-                  {Show "========================"}
+                  %{Show "========================"}
                end
-               {Show "Finished processing node: "#Value}
+               %{Show "Finished processing node: "#Value}
             end
          end
       end
