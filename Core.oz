@@ -464,8 +464,8 @@ define
                   
                   local NormalizedValue NormalizedParam TestResult in
                      % Convert both to strings
-                     NormalizedValue = {Strip {VirtualString.toString Value} " "}
-                     NormalizedParam = {Strip {VirtualString.toString FormalArgs.1} " "}
+                     NormalizedValue = {Strip {VirtualString.toString Value} " \n\t\r"}
+                     NormalizedParam = {Strip {VirtualString.toString FormalArgs.1} " \n\t\r"}
                      
                      % Test equality separately
                      TestResult = NormalizedValue == NormalizedParam
@@ -475,12 +475,18 @@ define
                      {Show "Value length: "#{Int.toString {Length NormalizedValue}}}
                      {Show "Param length: "#{Int.toString {Length NormalizedParam}}}
                      
+                     % Always substitute when it's a parameter
                      if TestResult then
                         {Show "  Substituting parameter "#Value#" with "#({Nth Args 1})}
                         Result = {New Node init({Nth Args 1})}
                      else
-                        {Show "  Using literal value: "#Value}
-                        Result = {New Node init(Value)}
+                        if NormalizedValue == NormalizedParam then
+                           {Show "  Substituting parameter "#Value#" with "#({Nth Args 1})}
+                           Result = {New Node init({Nth Args 1})}
+                        else
+                           {Show "  Using literal value: "#Value}
+                           Result = {New Node init(Value)}
+                        end
                      end
                   end
                   {Show "========================"}
