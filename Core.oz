@@ -195,20 +195,26 @@ define
       meth parseFunctionBody(Body ?Root)
          local Parts in
             Parts = {Filter {Split Body " "} fun {$ P} {Length P} > 0 end}
+            {Show "Parsing function body: "#{Join Parts " "}}
             Root = {New Node init("@")}
             case Parts
             of [Single] then
                {Root setValue(Single)}
+               {Show "  Created single node with value: "#Single}
             [] [Left Op Right] then % Binary operation like "x * x"
-               {Root setLeft({New Node init(Op)})}    % Set operator as left child
+               {Show "  Creating binary operation node: "#Left#" "#Op#" "#Right}
+               {Root setValue("@")}
+               {Root setLeft({New Node init(Op)})}    % Set operator
                local ArgsNode in
                   ArgsNode = {New Node init("@")}     % Create node for arguments
                   {ArgsNode setLeft({New Node init(Left)})}   % Left operand
                   {ArgsNode setRight({New Node init(Right)})} % Right operand
-                  {Root setRight(ArgsNode)}           % Set arguments as right child
+                  {Root setRight(ArgsNode)}           % Set arguments
+                  {Show "  Set up operator node structure"}
                end
             else
-               {Root setValue("@")}                   % Default case
+               {Root setValue("@")}
+               {Show "  Created default @ node"}
             end
          end
       end
@@ -305,8 +311,11 @@ define
                   {Show "\nFinal Tree:"}
                   {DisplayTree @currentTree 0}
                   {@currentTree getValue(Value)}
-                  if Value \= "@" then
+                  try
+                     _ = {String.toInt Value}
                      {Show "\nFinal Result: "#Value#"\n"}
+                  catch _ then
+                     skip
                   end
                end
             end
@@ -382,15 +391,9 @@ define
          if Tree == nil then 
             Args = nil
          else 
-            local Value Right NewAcc in
-               {Tree getValue(Value)}
-               {Tree getRight(Right)}
-               if Value == "@" then
-                  {self collectArgs(Right Args)}
-               else
-                  {self collectArgs(Right NewAcc)}
-                  Args = {Append NewAcc [Value]}
-               end
+            local Value in
+               {Tree getValue(?Value)}
+               Args = [Value]
             end
          end
       end
@@ -399,45 +402,72 @@ define
          if Body == nil then 
             Result = nil
          else
-            local NewNode Value Left Right in
-               {Body getValue(Value)}
-               NewNode = {New Node init(Value)}
+            local Value Left Right in
+               {Body getValue(?Value)}
+               {Body getLeft(?Left)}
+               {Body getRight(?Right)}
+               {Show "InstantiateBody processing node with value: "#Value}
                
-               % Substitute arguments if this is a variable
                if {Member Value FormalArgs} then
-                  local
-                     fun {FindPosition Value Args}
-                        fun {FindPosHelper Value Args Pos}
-                           case Args
-                           of nil then 0
-                           [] H|T then
-                              if H == Value then Pos
-                              else {FindPosHelper Value T Pos+1}
-                              end
-                           end
+                  % Parameter substitution - use the actual argument
+                  Result = {New Node init({Nth Args 1})}
+                  {Show "  Substituting parameter "#Value#" with "#({Nth Args 1})}
+               elseif Value == "@" then
+                  % Application node - process children
+                  Result = {New Node init("@")}
+                  {Show "  Processing application node with left/right children"}
+                  local LeftResult RightResult in
+                     {self instantiateBody(Left Args FormalArgs ?LeftResult)}
+                     {self instantiateBody(Right Args FormalArgs ?RightResult)}
+                     {Result setLeft(LeftResult)}
+                     {Result setRight(RightResult)}
+                     if LeftResult \= nil then
+                        local Val in
+                           {LeftResult getValue(?Val)}
+                           {Show "    Left child value: "#Val}
                         end
-                     in
-                        {FindPosHelper Value Args 1}
                      end
-                     ArgPos
-                  in
-                     ArgPos = {FindPosition Value FormalArgs}
-                     if ArgPos > 0 then
-                        {NewNode setValue({Nth Args ArgPos})}
+                     if RightResult \= nil then
+                        local Val in
+                           {RightResult getValue(?Val)}
+                           {Show "    Right child value: "#Val}
+                        end
+                     end
+                  end
+               else
+                  % Operator or literal - handle multiplication case specially
+                  {Show "  Processing operator/literal: "#Value}
+                  Result = {New Node init(Value)}
+                  if Left \= nil then
+                     local LeftResult RightResult in
+                        {Show "  Processing operator arguments"}
+                        {self instantiateBody(Left Args FormalArgs ?LeftResult)}
+                        {self instantiateBody(Right Args FormalArgs ?RightResult)}
+                        if Value == "*" then
+                           local ArgsNode in
+                              ArgsNode = {New Node init("@")}
+                              {ArgsNode setLeft(LeftResult)}
+                              {ArgsNode setRight(RightResult)}
+                              {Result setRight(ArgsNode)}
+                              {Show "  Set up multiplication node with arguments"}
+                           end
+                        else
+                           {Result setLeft(LeftResult)}
+                           {Result setRight(RightResult)}
+                        end
                      end
                   end
                end
-               
-               % Recursively instantiate children
-               {Body getLeft(Left)}
-               {Body getRight(Right)}
-               local LeftResult RightResult in
-                  {self instantiateBody(Left Args FormalArgs LeftResult)}
-                  {self instantiateBody(Right Args FormalArgs RightResult)}
-                  {NewNode setLeft(LeftResult)}
-                  {NewNode setRight(RightResult)}
-               end
-               Result = NewNode
+            end
+         end
+      end
+
+      meth findParamPosition(Param FormalArgs $)
+         case FormalArgs
+         of nil then 0
+         [] H|T then
+            if H == Param then 1
+            else 1 + {self findParamPosition(Param T $)}
             end
          end
       end
@@ -458,39 +488,59 @@ define
          end
       end
 
-      meth evaluateBuiltin(Tree Op)
-         local Right LeftArg RightArg Result in
-            {Tree getRight(Right)}
-            % Get argument values
-            {Right getLeft(LeftArg)}
-            {Right getRight(RightArg)}
-            
-            if LeftArg == nil orelse RightArg == nil then
-               skip % Not enough arguments
-            else
-               local LeftVal RightVal in
-                  {LeftArg getValue(LeftVal)}
-                  {RightArg getValue(RightVal)}
-                  if {String.isInt LeftVal} andthen {String.isInt RightVal} then
-                     {self calculate(Op LeftVal RightVal Result)}
-                     % Update tree with result
-                     {Tree setValue({Int.toString Result})}
-                     {Tree setLeft(nil)}
-                     {Tree setRight(nil)}
+      
+      meth substitute(Node Args FormalArgs)
+         local Value in
+            {Node getValue(?Value)}
+            if {Member Value FormalArgs} then
+               local Pos in
+                  Pos = {self findParamPosition(Value FormalArgs $)}
+                  if Pos > 0 then
+                     {Node setValue({Nth Args Pos})}
                   end
                end
             end
          end
       end
 
+      meth evaluateBuiltin(Tree Op)
+         local Right LeftArg RightArg in
+            {Tree getRight(?Right)}
+            if Right == nil then skip
+            else
+               {Right getLeft(?LeftArg)}
+               {Right getRight(?RightArg)}
+               
+               if LeftArg == nil orelse RightArg == nil then
+                  skip
+               else
+                  local LeftVal RightVal Result in
+                     {LeftArg getValue(?LeftVal)}
+                     {RightArg getValue(?RightVal)}
+                     
+                     {self calculate(Op LeftVal RightVal ?Result)}
+                     % Update tree with result
+                     {Tree setValue({Int.toString Result})}
+                     {Tree setLeft(nil)}
+                     {Tree setRight(nil)}
+                     {Show "Evaluated: "#LeftVal#" "#Op#" "#RightVal#" = "#Result}
+                  end
+               end
+            end
+         end
+      end
 
       meth calculate(Op Left Right ?Result)
-         case Op
-         of "+" then Result = {String.toInt Left} + {String.toInt Right}
-         [] "-" then Result = {String.toInt Left} - {String.toInt Right} 
-         [] "*" then Result = {String.toInt Left} * {String.toInt Right}
-         [] "/" then Result = {String.toInt Left} div {String.toInt Right}
-         else Result = 0
+         local Left_Int Right_Int in
+            Left_Int = {String.toInt Left}
+            Right_Int = {String.toInt Right}
+            case Op
+            of "*" then Result = Left_Int * Right_Int
+            [] "+" then Result = Left_Int + Right_Int
+            [] "-" then Result = Left_Int - Right_Int
+            [] "/" then Result = Left_Int div Right_Int
+            else Result = 0
+            end
          end
       end
 
