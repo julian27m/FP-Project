@@ -31,5 +31,5 @@ define
       end
    end
 
-   {RunProgram "test.hb"}
+   {RunProgram "Example2_twice.hb"}
 end
