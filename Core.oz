@@ -131,7 +131,7 @@ define
                if {Length CleanLine} > 0 then
                   local LineType in
                      {self getLineType(CleanLine LineType)}
-                     {Show "Processing line: "#{VirtualString.toString CleanLine}#" as "#{VirtualString.toString LineType}}
+                     {Show "Function: "#{VirtualString.toString CleanLine}}
                      case LineType
                      of func then
                         {self parseFunction(CleanLine)}
@@ -180,11 +180,14 @@ define
                         {Dictionary.put @functions FuncName 
                            o(args:Args
                              body:BodyTree)}
-                        {Show "Function Definition:"}
+                        {Show "\n=== Function Details ===\n"}
                         {Show "  Name: "#{VirtualString.toString Name}}
                         {Show "  Args: "#{VirtualString.toString {Join Args " "}}}
                         {Show "  Body: "#{VirtualString.toString Body}}
-                        {Show "Added function: "#{VirtualString.toString Name}#" to dictionary"}
+                        %{Show "Added function: "#{VirtualString.toString Name}#" to dictionary"}
+
+                        {Show "\n=== Task 2. Finding the next expression to reduce ==="}
+                        {Show "=== Task 3. Reducing the expression in the graph ===\n"}
                      end
                   end
                end
@@ -192,16 +195,19 @@ define
          end
       end
 
+      
+
       meth parseFunctionBody(Body ?Root)
          local Parts in
             Parts = {Filter {Split Body " "} fun {$ P} {Length P} > 0 end}
             {Show "Parsing function body: "#{Join Parts " "}}
+            {Show "\n=== Task1. Building the graph to represent the program ===\n"}
             case Parts
             of [Single] then
                Root = {New Node init(Single)}
                {Show "  Created single node with value: "#Single}
             [] [Left Op Right] then % Binary operation like "x * x"
-               {Show "  Creating binary operation for: "#Left#" "#Op#" "#Right}
+               %{Show "  Creating binary operation for: "#Left#" "#Op#" "#Right}
                Root = {New Node init("@")}
                local OpNode ArgsNode in
                   OpNode = {New Node init(Op)}
@@ -210,7 +216,7 @@ define
                   {Root setRight(ArgsNode)}
                   {ArgsNode setLeft({New Node init(Left)})}   % First operand
                   {ArgsNode setRight({New Node init(Right)})} % Second operand
-                  {Show "  Created tree structure:"}
+                  %{Show "  Created tree structure:"}
                   {Show "    Root(@) -> Left(*), Right(@)"}
                   {Show "    Right(@) -> Left("#Left#"), Right("#Right#")"}
                end
@@ -377,7 +383,7 @@ define
       end
 
       meth instantiateTemplate(Tree FuncName)
-         {Show "instantiateTemplate: processing "#FuncName}
+         %{Show "instantiateTemplate: processing "#FuncName}
          local Func Right Args FuncNameAtom in
             FuncNameAtom = {VirtualString.toAtom FuncName}
             Func = {Dictionary.condGet @functions FuncNameAtom nil}
@@ -386,7 +392,7 @@ define
             of nil then skip
             else
                {self collectArgs(Right Args)}
-               {Show "instantiateTemplate: collected argument"}
+               %{Show "instantiateTemplate: collected argument"}
                local NewTree in
                   {self instantiateBody(Func.body Args Func.args NewTree)}
                   {self replaceNode(Tree NewTree)}
@@ -398,11 +404,12 @@ define
       meth collectArgs(Tree ?Args)
          if Tree == nil then 
             Args = nil
-            {Show "collectArgs: empty tree"}
+            %{Show "collectArgs: empty tree"}
          else 
             local Value in
                {Tree getValue(?Value)}
-               {Show "collectArgs: value = "#Value}
+               
+               %{Show "collectArgs: value = "#Value}
                Args = case Value
                of "@" then
                   local Left Right RightArgs in
@@ -561,6 +568,7 @@ define
                      {Tree setValue({Int.toString Result})}
                      {Tree setLeft(nil)}
                      {Tree setRight(nil)}
+                     {Show "\n=== Task 4. Updating the expression for the evaluation ===\n"}
                      {Show "Evaluated: "#LeftVal#" "#Op#" "#RightVal#" = "#Result}
                   end
                end
