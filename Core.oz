@@ -196,24 +196,26 @@ define
          local Parts in
             Parts = {Filter {Split Body " "} fun {$ P} {Length P} > 0 end}
             {Show "Parsing function body: "#{Join Parts " "}}
-            Root = {New Node init("@")}
             case Parts
             of [Single] then
-               {Root setValue(Single)}
+               Root = {New Node init(Single)}
                {Show "  Created single node with value: "#Single}
             [] [Left Op Right] then % Binary operation like "x * x"
-               {Show "  Creating binary operation node: "#Left#" "#Op#" "#Right}
-               {Root setValue("@")}
-               {Root setLeft({New Node init(Op)})}    % Set operator
-               local ArgsNode in
-                  ArgsNode = {New Node init("@")}     % Create node for arguments
-                  {ArgsNode setLeft({New Node init(Left)})}   % Left operand
-                  {ArgsNode setRight({New Node init(Right)})} % Right operand
-                  {Root setRight(ArgsNode)}           % Set arguments
-                  {Show "  Set up operator node structure"}
+               {Show "  Creating binary operation for: "#Left#" "#Op#" "#Right}
+               Root = {New Node init("@")}
+               local OpNode ArgsNode in
+                  OpNode = {New Node init(Op)}
+                  ArgsNode = {New Node init("@")}
+                  {Root setLeft(OpNode)}
+                  {Root setRight(ArgsNode)}
+                  {ArgsNode setLeft({New Node init(Left)})}   % First operand
+                  {ArgsNode setRight({New Node init(Right)})} % Second operand
+                  {Show "  Created tree structure:"}
+                  {Show "    Root(@) -> Left(*), Right(@)"}
+                  {Show "    Right(@) -> Left("#Left#"), Right("#Right#")"}
                end
             else
-               {Root setValue("@")}
+               Root = {New Node init("@")}
                {Show "  Created default @ node"}
             end
          end
@@ -371,6 +373,7 @@ define
       end
 
       meth instantiateTemplate(Tree FuncName)
+         {Show "instantiateTemplate: processing "#FuncName}
          local Func Right Args FuncNameAtom in
             FuncNameAtom = {VirtualString.toAtom FuncName}
             Func = {Dictionary.condGet @functions FuncNameAtom nil}
@@ -379,6 +382,7 @@ define
             of nil then skip
             else
                {self collectArgs(Right Args)}
+               {Show "instantiateTemplate: collected argument"}
                local NewTree in
                   {self instantiateBody(Func.body Args Func.args NewTree)}
                   {self replaceNode(Tree NewTree)}
@@ -390,10 +394,21 @@ define
       meth collectArgs(Tree ?Args)
          if Tree == nil then 
             Args = nil
+            {Show "collectArgs: empty tree"}
          else 
             local Value in
                {Tree getValue(?Value)}
-               Args = [Value]
+               {Show "collectArgs: value = "#Value}
+               Args = case Value
+               of "@" then
+                  local Left Right RightArgs in
+                     {Tree getLeft(?Left)}
+                     {Tree getRight(?Right)}
+                     {self collectArgs(Right ?RightArgs)}
+                     RightArgs
+                  end
+               else [Value]
+               end
             end
          end
       end
@@ -402,62 +417,75 @@ define
          if Body == nil then 
             Result = nil
          else
-            local Value Left Right in
+            local Value Left Right HasLeft HasRight in
                {Body getValue(?Value)}
                {Body getLeft(?Left)}
                {Body getRight(?Right)}
-               {Show "InstantiateBody processing node with value: "#Value}
+               HasLeft = if Left == nil then "no" else "yes" end
+               HasRight = if Right == nil then "no" else "yes" end
                
-               if {Member Value FormalArgs} then
-                  % Parameter substitution - use the actual argument
-                  Result = {New Node init({Nth Args 1})}
-                  {Show "  Substituting parameter "#Value#" with "#({Nth Args 1})}
-               elseif Value == "@" then
-                  % Application node - process children
+               {Show "Processing node: "#Value}
+               {Show "  Has left child: "#HasLeft}
+               {Show "  Has right child: "#HasRight}
+               
+               % First determine if this is a parameter or special node
+               case Value
+               of "@" then
+                  % Application node
                   Result = {New Node init("@")}
-                  {Show "  Processing application node with left/right children"}
                   local LeftResult RightResult in
                      {self instantiateBody(Left Args FormalArgs ?LeftResult)}
                      {self instantiateBody(Right Args FormalArgs ?RightResult)}
                      {Result setLeft(LeftResult)}
                      {Result setRight(RightResult)}
-                     if LeftResult \= nil then
-                        local Val in
-                           {LeftResult getValue(?Val)}
-                           {Show "    Left child value: "#Val}
-                        end
-                     end
-                     if RightResult \= nil then
-                        local Val in
-                           {RightResult getValue(?Val)}
-                           {Show "    Right child value: "#Val}
+                  end
+               [] "*" then
+                  % Multiplication operation
+                  Result = {New Node init("*")}
+                  if Right \= nil then
+                     local ArgsNode LeftOperand RightOperand in
+                        ArgsNode = {New Node init("@")}
+                        {Right getLeft(?LeftOperand)}
+                        {Right getRight(?RightOperand)}
+                        local LeftResult RightResult in
+                           {self instantiateBody(LeftOperand Args FormalArgs ?LeftResult)}
+                           {self instantiateBody(RightOperand Args FormalArgs ?RightResult)}
+                           {ArgsNode setLeft(LeftResult)}
+                           {ArgsNode setRight(RightResult)}
+                           {Result setRight(ArgsNode)}
                         end
                      end
                   end
                else
-                  % Operator or literal - handle multiplication case specially
-                  {Show "  Processing operator/literal: "#Value}
-                  Result = {New Node init(Value)}
-                  if Left \= nil then
-                     local LeftResult RightResult in
-                        {Show "  Processing operator arguments"}
-                        {self instantiateBody(Left Args FormalArgs ?LeftResult)}
-                        {self instantiateBody(Right Args FormalArgs ?RightResult)}
-                        if Value == "*" then
-                           local ArgsNode in
-                              ArgsNode = {New Node init("@")}
-                              {ArgsNode setLeft(LeftResult)}
-                              {ArgsNode setRight(RightResult)}
-                              {Result setRight(ArgsNode)}
-                              {Show "  Set up multiplication node with arguments"}
-                           end
-                        else
-                           {Result setLeft(LeftResult)}
-                           {Result setRight(RightResult)}
-                        end
+                  % Debug info with simpler approach
+                  {Show "=== Parameter Check Debug ==="}
+                  {Show "FormalArgs: " # {VirtualString.toString {Join FormalArgs ""}}}
+                  {Show "Value: " # {VirtualString.toString Value}}
+                  
+                  local NormalizedValue NormalizedParam TestResult in
+                     % Convert both to strings
+                     NormalizedValue = {Strip {VirtualString.toString Value} " "}
+                     NormalizedParam = {Strip {VirtualString.toString FormalArgs.1} " "}
+                     
+                     % Test equality separately
+                     TestResult = NormalizedValue == NormalizedParam
+                     {Show "Equality test result: "#if TestResult then "equal" else "not equal" end}
+                     
+                     % Show string lengths
+                     {Show "Value length: "#{Int.toString {Length NormalizedValue}}}
+                     {Show "Param length: "#{Int.toString {Length NormalizedParam}}}
+                     
+                     if TestResult then
+                        {Show "  Substituting parameter "#Value#" with "#({Nth Args 1})}
+                        Result = {New Node init({Nth Args 1})}
+                     else
+                        {Show "  Using literal value: "#Value}
+                        Result = {New Node init(Value)}
                      end
                   end
+                  {Show "========================"}
                end
+               {Show "Finished processing node: "#Value}
             end
          end
       end
