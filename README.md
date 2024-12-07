@@ -70,10 +70,9 @@ Sigue estos pasos para configurar y ejecutar el proyecto en tu máquina local:
 El proyecto está organizado en los siguientes archivos para mantener un enfoque modular:
 
 - ``main.oz``: Punto de entrada del programa. Coordina el flujo de datos entre los módulos.
-- ``graph.oz``: Define estructuras de datos para los grafos y funciones para construirlos.
-- ``parser.oz``: Contiene la lógica para convertir el texto del programa funcional en una estructura interna comprensible.
-- ``reducer.oz``: Implementa las reglas para reducir grafos y evaluar expresiones.
-- ``util.oz``: Proporciona funciones auxiliares reutilizables como operaciones aritméticas y utilidades de depuración.
+- ``StringTool.oz``: Utilidades para manipular cadenas de texto, como dividir, unir y limpiar contenido.
+- ``Core.oz``: Contiene la lógica principal del evaluador, incluyendo la creación y manipulación de árboles, reducción de expresiones y evaluación de funciones.
+
 
 ## 🤝 Créditos
 

@@ -251,9 +251,9 @@ define
             Parts = {Filter {Split Body " "} fun {$ P} {Length P} > 0 end}
             Root = {New Node init("@")}
             case Parts
-            of [Single] then  % Single value/variable
+            of [Single] then 
                {Root setValue(Single)}
-            [] [Left Op Right] then  % Binary operation
+            [] [Left Op Right] then  
                {Root setLeft({New Node init(Op)})}
                local ArgsNode in
                   ArgsNode = {New Node init("@")}
@@ -261,7 +261,7 @@ define
                   {ArgsNode setRight({New Node init(Right)})}
                   {Root setRight(ArgsNode)}
                end
-            else  % More complex expressions
+            else  
                {self buildBodyTree(Parts Root)}
             end
          end
@@ -340,7 +340,7 @@ define
                   Result = nil
                else
                   {Left getValue(Value)}
-                  % First convert to string then to atom safely
+                  
                   local ValueStr ValueAtom in
                      ValueStr = {VirtualString.toString Value}
                      ValueAtom = {String.toAtom ValueStr}
@@ -361,14 +361,14 @@ define
       
 
       meth isBuiltinOperation(Op ?Result)
-         local OpStr in  % Add local declaration
+         local OpStr in  
             OpStr = {VirtualString.toString Op}
             Result = {Member OpStr ["+" "-" "*" "/"]} 
          end
       end
 
       meth reduceExpression(Tree)
-         local Left Right Value IsBuiltin ValueStr in  % Add ValueStr to local declaration
+         local Left Right Value IsBuiltin ValueStr in  
             {Tree getLeft(Left)}
             {Tree getRight(Right)}
             {Left getValue(Value)}
@@ -439,7 +439,7 @@ define
                %{Show "  Has left child: "#HasLeft}
                %{Show "  Has right child: "#HasRight}
                
-               % First determine if this is a parameter or special node
+               
                case Value
                of "@" then
                   % Application node
@@ -468,7 +468,7 @@ define
                      end
                   end
                else
-                  % Debug info with simpler approach
+                  % Debug 
                   %{Show "=== Parameter Check Debug ==="}
                   %{Show "FormalArgs: " # {VirtualString.toString {Join FormalArgs ""}}}
                   %{Show "Value: " # {VirtualString.toString Value}}
