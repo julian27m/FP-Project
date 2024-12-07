@@ -1,2 +1,0 @@
-fun sqr x = x * x            
-sqr 3
