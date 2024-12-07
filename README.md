@@ -44,27 +44,7 @@ Sigue estos pasos para configurar y ejecutar el proyecto en tu máquina local:
 5. Abre el archivo main.oz en tu editor.
 6. Ejecuta el proyecto siguiendo las instrucciones mencionadas en la sección de Requisitos del Sistema.
 
-
-{Show"Welcome to Hummingbird - Functional Programming Language"}
-
-    {Show {GetSaludo}}
-
-    {Show"The Graph module is working correctly."}
-
-    {Show"The Reducer module is working correctly."}
-
-    % Simulación básica de una operación funcional
-
-    {Show"Introduce a function:"}
-
-    Programa ="fun square(X) = X * X square(5)"
-
-    for Value in  {Infix2Prefix {Str2Lst Programa}} do
-
-    {Show Value}
-
-    end
-
+  
 ## 📁 Estructura del Proyecto
 
 El proyecto está organizado en los siguientes archivos para mantener un enfoque modular:
@@ -90,7 +70,15 @@ Para compilar y ejecutar Hummingbird, sigue estos pasos:
 3. El archivo start.bat realiza las siguientes acciones:
     - Compila los módulos StringTools.oz, Core.oz y Main.oz.
     - Ejecuta el programa usando ozengine.
-4. Observa los resultados en la consola. Si todo está correcto, deberías ver una salida similar a esta
+4. Observa los resultados en la consola.
+   Si todo está correcto, para el ejemplo:
+
+   ```bash
+    fun square x = x * x
+    square 5
+   ```
+    Deberías ver una salida similar a esta:
+   
     ```bash
    === Building Hummingbird ===
 
