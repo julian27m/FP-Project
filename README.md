@@ -73,6 +73,42 @@ El proyecto está organizado en los siguientes archivos para mantener un enfoque
 - ``StringTool.oz``: Utilidades para manipular cadenas de texto, como dividir, unir y limpiar contenido.
 - ``Core.oz``: Contiene la lógica principal del evaluador, incluyendo la creación y manipulación de árboles, reducción de expresiones y evaluación de funciones.
 
+## 🔨 Ejecución
+
+Para compilar y ejecutar Hummingbird, sigue estos pasos:
+
+1. **Limpia** los archivos compilados anteriores con el siguiente comando:
+   ```bash
+   ./clean.bat
+    ```
+   Esto asegura que no haya archivos de compilación desactualizados que puedan interferir con el proceso.
+
+2. Compila y ejecuta el programa con:
+    ```bash
+   ./start.bat
+    ```
+3. El archivo start.bat realiza las siguientes acciones:
+    - Compila los módulos StringTools.oz, Core.oz y Main.oz.
+    - Ejecuta el programa usando ozengine.
+4. Observa los resultados en la consola. Si todo está correcto, deberías ver una salida similar a esta
+    ```bash
+   === Building Hummingbird ===
+
+    Compiling StringTools...
+    Compiling Core...
+    Compiling Main...
+    
+    === Running Hummingbird ===
+    
+    === Starting Hummingbird Execution ===
+    Function: fun square(X) = X * X
+    Evaluating: square(5)
+    Final Result: 25
+    
+    === Execution of Hummingbird Complete ===
+    ```
+   
+  
 
 ## 🤝 Créditos
 
