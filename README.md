@@ -79,8 +79,8 @@ Para compilar y ejecutar Hummingbird, sigue estos pasos:
    El programa Hummingbird sigue un flujo estructurado para interpretar y evaluar programas funcionales escritos en su lenguaje específico. A continuación, se detalla cada etapa de ejecución, basada en el           ejemplo:
  
    ```bash
-    fun square x = x * x
-    square 5
+    fun twice x = x + x
+    twice 5
    ```
    
    Este programa define una función twice que duplica el valor de su argumento (x) y luego la aplica al número 5.
