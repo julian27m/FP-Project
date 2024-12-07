@@ -70,33 +70,103 @@ Para compilar y ejecutar Hummingbird, sigue estos pasos:
 3. El archivo start.bat realiza las siguientes acciones:
     - Compila los módulos StringTools.oz, Core.oz y Main.oz.
     - Ejecuta el programa usando ozengine.
+  
+      
 4. Observa los resultados en la consola.
-   Si todo está correcto, para el ejemplo:
 
+   El programa Hummingbird sigue un flujo estructurado para interpretar y evaluar programas funcionales escritos en su lenguaje específico. A continuación, se detalla cada etapa de ejecución, basada en el   ejemplo:
+ 
    ```bash
     fun square x = x * x
     square 5
    ```
-    Deberías ver una salida similar a esta:
-   
-    ```bash
-   === Building Hummingbird ===
+   Este programa define una función twice que duplica el valor de su argumento (x) y luego la aplica al número 5.
 
-    Compiling StringTools...
-    Compiling Core...
-    Compiling Main...
-    
-    === Running Hummingbird ===
-    
-    === Starting Hummingbird Execution ===
-    Function: fun square(X) = X * X
-    Evaluating: square(5)
-    Final Result: 25
-    
-    === Execution of Hummingbird Complete ===
-    ```
+   1. Lectura del programa
+    El intérprete comienza leyendo el archivo de entrada (Example2_twice.hb) que contiene el programa funcional.
+    Deberías ver una salida similar a esta:
+
+   ```bash
+    Reading program from: Example2_twice.hb
    
-  
+    Program contents:
+      fun twice x = x + x
+      twice 5
+   ```
+    2. Análisis del programa
+       a. Definición de funciones:
+        
+       - El intérprete identifica y parsea las funciones definidas en el programa.
+        -La función twice x = x + x se representa como un grafo que detalla su cuerpo (x + x) y sus argumentos (x).
+         
+        b. Construcción del grafo:
+        
+        Hummingbird convierte el cuerpo de la función en un grafo que describe las operaciones y sus relaciones.
+
+       ```bash
+        Function: fun twice x = x + x
+        Parsing function body: x + x
+
+        === Task1. Building the graph to represent the program ===
+
+          Root(@) -> Left(*), Right(@)
+        )   Right(@) -> Left(x), Right(x
+       
+       ````
+
+       ```bash
+       === Function Details ===
+
+        Name: twice
+        Args: x
+        Body: x + x
+       ```
+
+       3. Aplicación de funciones
+          El intérprete detecta la aplicación de la función twice con el argumento 5 y genera un grafo inicial para esta expresión.
+
+          ```bash
+          Function: twice 5
+
+          Current Expression Tree:
+          @
+            |__twice
+            |__5
+          ```
+
+          4. Reducción del grafo
+              Sustitución de argumentos:
+              - La función twice sustituye su argumento x con el valor 5.
+              - El grafo de la expresión se actualiza para reflejar el cuerpo de la función con el valor proporcionado.
+            
+          ```bash
+          Current Expression Tree:
+          @
+            |__+
+            |__@
+              |__5
+              |__5
+          ```
+
+          Evaluación de operaciones:
+            La operación 5 + 5 se evalúa, y el resultado se inserta en el grafo.
+          ```bash
+          === Task 4. Updating the expression for the evaluation ===       
+
+          Evaluated: 5 + 5 = 10
+          
+          Current Expression Tree:
+          10
+          ```
+
+          *El intérprete finaliza el proceso mostrando el resultado final de la evaluación (10) y el árbol final reducido.*
+
+           ```bash
+           Final Tree:
+          10
+          
+          Final Result: 10
+          ```
 
 ## 🤝 Créditos
 
