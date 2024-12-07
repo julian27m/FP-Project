@@ -31,5 +31,8 @@ define
       end
    end
 
-   {RunProgram "Example2_twice.hb"}
+   {RunProgram "Example1_square.hb"}
+   %{RunProgram "Example2_twice.hb"}
+   %{RunProgram "Example3_substraction.hb"}
+   %{RunProgram "Example4_div.hb"}
 end

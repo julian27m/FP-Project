@@ -1,2 +1,2 @@
 fun twice x = x + x
-twice 5
+twice 50
