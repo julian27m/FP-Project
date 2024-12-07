@@ -74,12 +74,15 @@ Para compilar y ejecutar Hummingbird, sigue estos pasos:
       
 4. Observa los resultados en la consola.
 
-   El programa Hummingbird sigue un flujo estructurado para interpretar y evaluar programas funcionales escritos en su lenguaje específico. A continuación, se detalla cada etapa de ejecución, basada en el   ejemplo:
+   ## Cómo funciona Hummingbird
+
+   El programa Hummingbird sigue un flujo estructurado para interpretar y evaluar programas funcionales escritos en su lenguaje específico. A continuación, se detalla cada etapa de ejecución, basada en el           ejemplo:
  
    ```bash
     fun square x = x * x
     square 5
    ```
+   
    Este programa define una función twice que duplica el valor de su argumento (x) y luego la aplica al número 5.
 
    1. Lectura del programa
@@ -93,7 +96,9 @@ Para compilar y ejecutar Hummingbird, sigue estos pasos:
       fun twice x = x + x
       twice 5
    ```
+   
     2. Análisis del programa
+       
        a. Definición de funciones:
         
        - El intérprete identifica y parsea las funciones definidas en el programa.
@@ -112,7 +117,10 @@ Para compilar y ejecutar Hummingbird, sigue estos pasos:
           Root(@) -> Left(*), Right(@)
         )   Right(@) -> Left(x), Right(x
        
-       ````
+       ```
+       
+       c. Detalles de la función:
+          El nombre, los argumentos y el cuerpo de la función se almacenan para su posterior evaluación.
 
        ```bash
        === Function Details ===
@@ -135,6 +143,7 @@ Para compilar y ejecutar Hummingbird, sigue estos pasos:
           ```
 
           4. Reducción del grafo
+             
               Sustitución de argumentos:
               - La función twice sustituye su argumento x con el valor 5.
               - El grafo de la expresión se actualiza para reflejar el cuerpo de la función con el valor proporcionado.
@@ -150,6 +159,7 @@ Para compilar y ejecutar Hummingbird, sigue estos pasos:
 
           Evaluación de operaciones:
             La operación 5 + 5 se evalúa, y el resultado se inserta en el grafo.
+          
           ```bash
           === Task 4. Updating the expression for the evaluation ===       
 
