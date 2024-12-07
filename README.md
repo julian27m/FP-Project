@@ -57,22 +57,23 @@ El proyecto está organizado en los siguientes archivos para mantener un enfoque
 
 Para compilar y ejecutar Hummingbird, sigue estos pasos:
 
-1. **Limpia** los archivos compilados anteriores con el siguiente comando:
+1. En Main.oz asegura que se esté leyendo el archivo de prueba deseado (linea 34).
+2.  **Limpia** los archivos compilados anteriores con el siguiente comando:
    ```bash
    ./clean.bat
-    ```
+   ```
    Esto asegura que no haya archivos de compilación desactualizados que puedan interferir con el proceso.
 
-2. Compila y ejecuta el programa con:
+3. Compila y ejecuta el programa con:
     ```bash
    ./start.bat
     ```
-3. El archivo start.bat realiza las siguientes acciones:
+4. El archivo start.bat realiza las siguientes acciones:
     - Compila los módulos StringTools.oz, Core.oz y Main.oz.
     - Ejecuta el programa usando ozengine.
   
       
-4. Observa los resultados en la consola.
+5. Observa los resultados en la consola.
 
    ## Cómo funciona Hummingbird
 
