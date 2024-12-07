@@ -57,7 +57,7 @@ El proyecto está organizado en los siguientes archivos para mantener un enfoque
 
 Para compilar y ejecutar Hummingbird, sigue estos pasos:
 
-1. En Main.oz asegura que se esté leyendo el archivo de prueba deseado (linea 34).
+1. En Main.oz asegura que se esté leyendo el archivo de prueba deseado (linea 34). Hay 4 archivos de prueba bajo el nombre ``Examplen.oz``
 2.  **Limpia** los archivos compilados anteriores con el siguiente comando:
    ```bash
    ./clean.bat
